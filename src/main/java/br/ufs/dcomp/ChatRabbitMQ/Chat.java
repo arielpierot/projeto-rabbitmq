@@ -4,6 +4,8 @@ import com.rabbitmq.client.*;
 import java.io.IOException;
 import java.util.*;
 import java.text.*;
+import com.google.protobuf.util.JsonFormat;
+import com.google.protobuf.ByteString;
 
 public class Chat {
 
@@ -29,13 +31,20 @@ public class Chat {
     Consumer consumer = new DefaultConsumer(channel) {
       public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
           throws IOException {
-        String message = new String(body, "UTF-8");
-      
-        System.out.println();
-        System.out.println(message);
+            
+        MensagemProto.Mensagem mensagemRecebida = MensagemProto.Mensagem.parseFrom(body);
         
-        String emissor = message.substring(message.indexOf("@") + 1, message.indexOf(" diz"));
-        System.out.print("@" + emissor + " >> ");
+        String emissor = mensagemRecebida.getEmissor();
+        String data = mensagemRecebida.getData();
+        String hora = mensagemRecebida.getHora();
+        String grupo = mensagemRecebida.getGrupo();
+        
+        MensagemProto.Conteudo conteudoRecebido = mensagemRecebida.getConteudo();
+        String tipo = conteudoRecebido.getTipo();
+        String corpo = new String(conteudoRecebido.getCorpo().toByteArray());
+        String nome = conteudoRecebido.getNome();
+        
+        System.out.println("("+ data + " às " + hora +") " + emissor + " diz: " + corpo);
         
       }
     };
@@ -65,11 +74,25 @@ public class Chat {
       else
       {
         
-        String data = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
-        String horario = new SimpleDateFormat("HH:mm").format(new Date());
+        MensagemProto.Mensagem.Builder msgBuilder = MensagemProto.Mensagem.newBuilder();
+        msgBuilder.setEmissor(usuario);
+        msgBuilder.setData(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
+        msgBuilder.setHora(new SimpleDateFormat("HH:mm").format(new Date()));
         
-        mensagem = "("+ data +" às " + horario + ") @" + usuario + " diz: " + mensagem;
-        channel.basicPublish("", usuarioReceptor, null, mensagem.getBytes("UTF-8"));
+        MensagemProto.Conteudo.Builder conteudoBuilder = MensagemProto.Conteudo.newBuilder();
+        conteudoBuilder.setTipo("text/plain");
+        
+        conteudoBuilder.setCorpo(ByteString.copyFrom(mensagem.getBytes("UTF-8")));
+        
+        conteudoBuilder.setNome("Nova Mensagem");
+        
+        msgBuilder.setConteudo(conteudoBuilder);
+        
+        MensagemProto.Mensagem mensagemBuilded = msgBuilder.build();
+    
+        byte[] mensagemBytes = mensagemBuilded.toByteArray();
+        
+        channel.basicPublish("", usuarioReceptor, null, mensagemBytes);
       }
       
       if(mensagem.contains("exit"))
