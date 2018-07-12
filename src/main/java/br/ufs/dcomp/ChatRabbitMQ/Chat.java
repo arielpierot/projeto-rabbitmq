@@ -14,7 +14,7 @@ public class Chat {
     Scanner scanner = new Scanner(System.in);
     
     ConnectionFactory factory = new ConnectionFactory();
-    factory.setHost("34.219.46.92");
+    factory.setHost("54.212.207.13");
     factory.setUsername("admin");
     factory.setPassword("admin");
     factory.setVirtualHost("/");
@@ -33,7 +33,6 @@ public class Chat {
           throws IOException {
             
         MensagemProto.Mensagem mensagemRecebida = MensagemProto.Mensagem.parseFrom(body);
-        
         String emissor = mensagemRecebida.getEmissor();
         String data = mensagemRecebida.getData();
         String hora = mensagemRecebida.getHora();
@@ -66,10 +65,37 @@ public class Chat {
         mensagem = scanner.nextLine();
       }
     
-      if(mensagem.contains("@"))
+    
+      
+      
+      if(mensagem.length()> 0 && mensagem.substring(0, 1).matches("[@]"))
       {
         int tamanhoMensagem = mensagem.length();
         usuarioReceptor = mensagem.substring(1,tamanhoMensagem);
+      }
+      else if(mensagem.length()> 0 && mensagem.substring(0, 1).matches("[!]"))
+      {
+        if(mensagem.contains("!addGroup"))
+        {
+           String[] comando = mensagem.split(" ");
+           channel.exchangeDeclare(comando[1], "fanout");
+             
+        }
+        else if (mensagem.contains("!addUser"))
+        {
+          String[] comando = mensagem.split(" ");
+          channel.queueBind(comando[1], comando[2], "");
+        }
+        else if (mensagem.contains("!removeGroup"))
+        {
+          String[] comando = mensagem.split(" ");
+          channel.exchangeDelete(comando[1], false);
+        }
+        else if (mensagem.contains("!delFromGroup"))
+        {
+          String[] comando = mensagem.split(" ");
+          channel.queueUnbind(comando[1], comando[2], "");
+        }
       }
       else
       {
