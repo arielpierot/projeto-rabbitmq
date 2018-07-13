@@ -24,9 +24,13 @@ public class Chat {
     System.out.print("User: ");
     String usuario = scanner.nextLine();
     
+    Boolean msgGrupo = false;
+    
     channel.queueDeclare(usuario, false, false, false, null);
     
     String usuarioReceptor = "";
+    String grupoNome = "";
+    String mensagem = "";
     
     Consumer consumer = new DefaultConsumer(channel) {
       public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
@@ -50,84 +54,123 @@ public class Chat {
     
     channel.basicConsume(usuario, true, consumer);
     
-    while(true)
+    System.out.print(">> ");
+    mensagem = scanner.nextLine();
+    
+    while(true && usuario.length() > 0)
     {
-      String mensagem = "";
       
-      if(usuarioReceptor.length() == 0)
+      Boolean comandoAtivo = false;
+      
+      int tamanhoMensagem = mensagem.length();
+      
+      if(tamanhoMensagem == 0)
+        break;
+      
+      if(mensagem.substring(0, 1).equals("@"))
       {
-        System.out.print(">> ");
-        mensagem = scanner.nextLine(); 
-      }
-      else
-      {
+        grupoNome = "";
+        comandoAtivo = true;
+        usuarioReceptor = mensagem.substring(1,tamanhoMensagem);
+        msgGrupo = false;
+        
         System.out.print("@" + usuarioReceptor + " >> ");
+      }
+      else if(mensagem.substring(0, 1).equals("!"))
+      {
+        comandoAtivo = true;
+        String[] comando = mensagem.split(" ");
+  
+        if(mensagem.contains("!addGroup"))
+           channel.exchangeDeclare(comando[1], "fanout");
+        else if (mensagem.contains("!addUser"))
+          channel.queueBind(comando[1], comando[2], "");
+        else if (mensagem.contains("!removeGroup"))
+          channel.exchangeDelete(comando[1], false);
+        else if (mensagem.contains("!delFromGroup"))
+          channel.queueUnbind(comando[1], comando[2], "");
+          
+        if(usuarioReceptor.length() > 0)
+          System.out.print("@" + usuarioReceptor + " >> ");
+        else if(grupoNome.length() > 0)
+          System.out.print("#" + grupoNome + " >> ");
+      }
+      else if(mensagem.substring(0, 1).equals("#"))
+      {
+        usuarioReceptor = "";
+        comandoAtivo = true;
+        grupoNome = mensagem.substring(1, tamanhoMensagem);
+        msgGrupo = true;
+        
+        System.out.print("#" + grupoNome + " >> ");
+      }
+      
+      if(msgGrupo && !comandoAtivo)
+      {
+        System.out.print("#" + grupoNome + " >> ");
+        enviar_mensagem_grupo(mensagem, usuario, grupoNome, channel);
         mensagem = scanner.nextLine();
       }
-    
-    
-      
-      
-      if(mensagem.length()> 0 && mensagem.substring(0, 1).matches("[@]"))
+      else if(!comandoAtivo)
       {
-        int tamanhoMensagem = mensagem.length();
-        usuarioReceptor = mensagem.substring(1,tamanhoMensagem);
-      }
-      else if(mensagem.length()> 0 && mensagem.substring(0, 1).matches("[!]"))
-      {
-        if(mensagem.contains("!addGroup"))
-        {
-           String[] comando = mensagem.split(" ");
-           channel.exchangeDeclare(comando[1], "fanout");
-             
-        }
-        else if (mensagem.contains("!addUser"))
-        {
-          String[] comando = mensagem.split(" ");
-          channel.queueBind(comando[1], comando[2], "");
-        }
-        else if (mensagem.contains("!removeGroup"))
-        {
-          String[] comando = mensagem.split(" ");
-          channel.exchangeDelete(comando[1], false);
-        }
-        else if (mensagem.contains("!delFromGroup"))
-        {
-          String[] comando = mensagem.split(" ");
-          channel.queueUnbind(comando[1], comando[2], "");
-        }
+        System.out.print("@" + usuarioReceptor + " >> ");
+        enviar_mensagem(mensagem, usuario, usuarioReceptor, channel);
+        mensagem = scanner.nextLine();
       }
       else
-      {
-        
-        MensagemProto.Mensagem.Builder msgBuilder = MensagemProto.Mensagem.newBuilder();
-        msgBuilder.setEmissor(usuario);
-        msgBuilder.setData(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
-        msgBuilder.setHora(new SimpleDateFormat("HH:mm").format(new Date()));
-        
-        MensagemProto.Conteudo.Builder conteudoBuilder = MensagemProto.Conteudo.newBuilder();
-        conteudoBuilder.setTipo("text/plain");
-        
-        conteudoBuilder.setCorpo(ByteString.copyFrom(mensagem.getBytes("UTF-8")));
-        
-        conteudoBuilder.setNome("Nova Mensagem");
-        
-        msgBuilder.setConteudo(conteudoBuilder);
-        
-        MensagemProto.Mensagem mensagemBuilded = msgBuilder.build();
-    
-        byte[] mensagemBytes = mensagemBuilded.toByteArray();
-        
-        channel.basicPublish("", usuarioReceptor, null, mensagemBytes);
-      }
+        mensagem = scanner.nextLine();
       
-      if(mensagem.contains("exit"))
-      {
-        channel.close();
-        connection.close();
-        break;
-      }
-        
+      
     }
+    
+    channel.close();
+    connection.close();
+    
+  }
+  
+  public static void enviar_mensagem(String mensagem, String usuario, String usuarioReceptor, Channel channel) throws IOException
+  {
+    MensagemProto.Mensagem.Builder msgBuilder = MensagemProto.Mensagem.newBuilder();
+    msgBuilder.setEmissor(usuario);
+    msgBuilder.setData(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
+    msgBuilder.setHora(new SimpleDateFormat("HH:mm").format(new Date()));
+
+    MensagemProto.Conteudo.Builder conteudoBuilder = MensagemProto.Conteudo.newBuilder();
+    conteudoBuilder.setTipo("text/plain");
+    
+    conteudoBuilder.setCorpo(ByteString.copyFrom(mensagem.getBytes("UTF-8")));
+    
+    conteudoBuilder.setNome("Nova Mensagem");
+    
+    msgBuilder.setConteudo(conteudoBuilder);
+  
+    MensagemProto.Mensagem mensagemBuilded = msgBuilder.build();
+    
+    byte[] mensagemBytes = mensagemBuilded.toByteArray();
+    
+    channel.basicPublish("", usuarioReceptor, null, mensagemBytes);
+  }
+  
+  public static void enviar_mensagem_grupo(String mensagem, String usuario, String grupoNome, Channel channel) throws IOException
+  {
+    MensagemProto.Mensagem.Builder msgBuilder = MensagemProto.Mensagem.newBuilder();
+    msgBuilder.setEmissor(usuario);
+    msgBuilder.setData(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
+    msgBuilder.setHora(new SimpleDateFormat("HH:mm").format(new Date()));
+
+    MensagemProto.Conteudo.Builder conteudoBuilder = MensagemProto.Conteudo.newBuilder();
+    conteudoBuilder.setTipo("text/plain");
+    
+    conteudoBuilder.setCorpo(ByteString.copyFrom(mensagem.getBytes("UTF-8")));
+    
+    conteudoBuilder.setNome("Nova Mensagem");
+    
+    msgBuilder.setConteudo(conteudoBuilder);
+  
+    MensagemProto.Mensagem mensagemBuilded = msgBuilder.build();
+    
+    byte[] mensagemBytes = mensagemBuilded.toByteArray();
+    
+    channel.basicPublish(grupoNome, "", null, mensagemBytes);
   }
 }
