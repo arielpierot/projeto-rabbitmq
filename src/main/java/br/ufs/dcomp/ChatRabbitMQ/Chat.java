@@ -32,6 +32,7 @@ public class Chat {
     String grupoNome = "";
     String mensagem = "";
     
+    
     Consumer consumer = new DefaultConsumer(channel) {
       public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
           throws IOException {
@@ -47,8 +48,13 @@ public class Chat {
         String corpo = new String(conteudoRecebido.getCorpo().toByteArray());
         String nome = conteudoRecebido.getNome();
         
-        System.out.println("("+ data + " às " + hora +") " + emissor + " diz: " + corpo);
+        System.out.println("");
         
+        if(grupo.length() == 0)
+          System.out.println("("+ data + " às " + hora +") " + emissor + " diz: " + corpo);
+        else
+          System.out.println("("+ data + " às " + hora +") " + emissor + "#" + grupo + " diz: " + corpo);
+          
       }
     };
     
@@ -61,6 +67,7 @@ public class Chat {
     {
       
       Boolean comandoAtivo = false;
+      Boolean mensagemEnviada = false;
       
       int tamanhoMensagem = mensagem.length();
       
@@ -155,15 +162,15 @@ public class Chat {
   {
     MensagemProto.Mensagem.Builder msgBuilder = MensagemProto.Mensagem.newBuilder();
     msgBuilder.setEmissor(usuario);
+    msgBuilder.setGrupo(grupoNome);
     msgBuilder.setData(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
     msgBuilder.setHora(new SimpleDateFormat("HH:mm").format(new Date()));
+    
 
     MensagemProto.Conteudo.Builder conteudoBuilder = MensagemProto.Conteudo.newBuilder();
     conteudoBuilder.setTipo("text/plain");
-    
+    conteudoBuilder.setNome("Nova msg");
     conteudoBuilder.setCorpo(ByteString.copyFrom(mensagem.getBytes("UTF-8")));
-    
-    conteudoBuilder.setNome("Nova Mensagem");
     
     msgBuilder.setConteudo(conteudoBuilder);
   
