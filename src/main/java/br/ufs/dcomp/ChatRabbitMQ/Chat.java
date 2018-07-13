@@ -8,6 +8,8 @@ import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.ByteString;
 
 public class Chat {
+  
+  static String usuario;
 
   public static void main(String[] argv) throws Exception {
     
@@ -21,8 +23,10 @@ public class Chat {
     Connection connection = factory.newConnection();
     Channel channel = connection.createChannel();
     
+    Channel channelFile = connection.createChannel();
+    
     System.out.print("User: ");
-    String usuario = scanner.nextLine();
+    usuario = scanner.nextLine();
     
     Boolean msgGrupo = false;
     
@@ -50,10 +54,23 @@ public class Chat {
         
         System.out.println("");
         
-        if(grupo.length() == 0)
-          System.out.println("("+ data + " às " + hora +") " + emissor + " diz: " + corpo);
+        if(tipo.equals("text/plain"))
+        {
+          if(grupo.length() == 0)
+          {
+            System.out.println("("+ data + " às " + hora +") " + emissor + " diz: " + corpo);
+            System.out.print("@" + usuario + " >> ");
+          }
+          else
+          {
+            System.out.println("("+ data + " às " + hora +") " + emissor + "#" + grupo + " diz: " + corpo);
+            System.out.print("#" + grupo + " >> ");
+          }
+        }
         else
-          System.out.println("("+ data + " às " + hora +") " + emissor + "#" + grupo + " diz: " + corpo);
+        {
+          System.out.println("Você recebeu de " + emissor + " o arquivo: " + corpo);
+        }
           
       }
     };
@@ -83,6 +100,15 @@ public class Chat {
         
         System.out.print("@" + usuarioReceptor + " >> ");
       }
+      else if(mensagem.substring(0, 1).equals("#"))
+      {
+        usuarioReceptor = "";
+        comandoAtivo = true;
+        grupoNome = mensagem.substring(1, tamanhoMensagem);
+        msgGrupo = true;
+        
+        System.out.print("#" + grupoNome + " >> ");
+      }
       else if(mensagem.substring(0, 1).equals("!"))
       {
         comandoAtivo = true;
@@ -96,20 +122,21 @@ public class Chat {
           channel.exchangeDelete(comando[1], false);
         else if (mensagem.contains("!delFromGroup"))
           channel.queueUnbind(comando[1], comando[2], "");
+        else if (mensagem.contains("!upload"))
+        {
+          
+          channelFile.queueDeclare(usuario + "_upload", false, false, false, null);
+          String arquivoUpload = comando[1];
+          
+          ThreadFile arquivo = new ThreadFile(arquivoUpload, usuario, usuarioReceptor, grupoNome, channelFile);
+          arquivo.start();
+          
+        }
           
         if(usuarioReceptor.length() > 0)
           System.out.print("@" + usuarioReceptor + " >> ");
         else if(grupoNome.length() > 0)
           System.out.print("#" + grupoNome + " >> ");
-      }
-      else if(mensagem.substring(0, 1).equals("#"))
-      {
-        usuarioReceptor = "";
-        comandoAtivo = true;
-        grupoNome = mensagem.substring(1, tamanhoMensagem);
-        msgGrupo = true;
-        
-        System.out.print("#" + grupoNome + " >> ");
       }
       
       if(msgGrupo && !comandoAtivo)
