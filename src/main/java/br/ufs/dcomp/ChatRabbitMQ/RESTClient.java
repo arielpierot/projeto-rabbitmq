@@ -5,9 +5,9 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
  
-public class RESTClient extends Thread
+public class RESTClient
 {
-    public void run()
+    public void check(String pathRest)
     {
         try {
             
@@ -21,11 +21,11 @@ public class RESTClient extends Thread
             String authorizationHeaderValue = "Basic " + java.util.Base64.getEncoder().encodeToString( usernameAndPassword.getBytes() );
      
             // Perform a request
-            String restResource = "https://34.218.190.30:15672";
+            String restResource = "http://34.218.190.30:15672";
             Client client = ClientBuilder.newClient();
             Response resposta = client.target( restResource )
             	//.path("/api/exchanges/iagffzqu/ufs/bindings/source") // lista todos os binds que tem "ufs" como source	
-                .path("/api/exchanges")
+                .path(pathRest)
             	.request(MediaType.APPLICATION_JSON)
                 .header( authorizationHeaderName, authorizationHeaderValue ) // The basic authentication header goes here
                 .get();     // Perform a post with the form values

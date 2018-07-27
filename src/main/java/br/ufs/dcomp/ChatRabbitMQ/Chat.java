@@ -37,6 +37,8 @@ public class Chat {
     String grupoNome = "";
     String mensagem = "";
     
+    RESTClient restClient = new RESTClient();
+    
     
     Consumer consumer = new DefaultConsumer(channel) {
       public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
@@ -159,9 +161,12 @@ public class Chat {
         }
         else if (mensagem.contains("!listGroups"))
         {
-          //
-          RESTClient client = new RESTClient();
-          client.start();
+          restClient.check("/api/exchanges");
+        }
+        else if (mensagem.contains("!listUsers"))
+        {
+          String nomeGrupo = comando[1];
+          restClient.check("/api/exchanges/" + nomeGrupo + "/bindings/source");
         }
           
         if(usuarioReceptor.length() > 0)
@@ -180,13 +185,10 @@ public class Chat {
         System.out.print("@" + usuarioReceptor + " >> ");
         enviar_mensagem(mensagem, usuario, usuarioReceptor, channel);
       }
-      else
+      else if(usuarioReceptor.length() == 0)
         System.out.print(">> ");
         
-        
        mensagem = scanner.nextLine();
-      
-      
     }
     
     channel.close();
