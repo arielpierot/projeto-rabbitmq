@@ -160,7 +160,8 @@ public class Chat {
         else if (mensagem.contains("!listGroups"))
         {
           //
-          System.out.println("falta fazer");
+          RESTClient client = new RESTClient();
+          client.start();
         }
           
         if(usuarioReceptor.length() > 0)
