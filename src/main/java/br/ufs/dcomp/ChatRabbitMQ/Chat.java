@@ -157,6 +157,11 @@ public class Chat {
           arquivo.start();
           
         }
+        else if (mensagem.contains("!listGroups"))
+        {
+          //
+          System.out.println("falta fazer");
+        }
           
         if(usuarioReceptor.length() > 0)
           System.out.print("@" + usuarioReceptor + " >> ");
@@ -168,16 +173,17 @@ public class Chat {
       {
         System.out.print("#" + grupoNome + " >> ");
         enviar_mensagem_grupo(mensagem, usuario, grupoNome, channel);
-        mensagem = scanner.nextLine();
       }
       else if(!comandoAtivo)
       {
         System.out.print("@" + usuarioReceptor + " >> ");
         enviar_mensagem(mensagem, usuario, usuarioReceptor, channel);
-        mensagem = scanner.nextLine();
       }
       else
-        mensagem = scanner.nextLine();
+        System.out.print(">> ");
+        
+        
+       mensagem = scanner.nextLine();
       
       
     }
