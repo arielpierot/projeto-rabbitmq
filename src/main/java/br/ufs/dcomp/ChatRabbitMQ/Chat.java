@@ -6,6 +6,7 @@ import java.util.*;
 import java.text.*;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.ByteString;
+import java.io.*;
 
 public class Chat {
   
@@ -16,7 +17,7 @@ public class Chat {
     Scanner scanner = new Scanner(System.in);
     
     ConnectionFactory factory = new ConnectionFactory();
-    factory.setHost("54.212.207.13");
+    factory.setHost("34.218.190.30");
     factory.setUsername("admin");
     factory.setPassword("admin");
     factory.setVirtualHost("/");
@@ -69,7 +70,26 @@ public class Chat {
         }
         else
         {
-          System.out.println("Você recebeu de " + emissor + " o arquivo: " + corpo);
+          
+          byte[] arquivoRecebidoBytes = conteudoRecebido.getCorpo().toByteArray();
+          
+          final String diretorio = "/home/ubuntu/workspace/sd/Chat/uploads/" + usuario;
+          
+          String arquivo = nome + "." + tipo;
+          
+          System.out.println("("+ data + " às " + hora +")" + " Arquivo \"" + arquivo + "\" recebido de @" + emissor+ " !");
+          File diretorioFile = new File(diretorio);
+          
+          if (!diretorioFile.exists() && !diretorioFile.isDirectory()) {
+            diretorioFile.mkdir();
+          }
+          
+          
+          File file = new File(diretorio + "/"+ arquivo);
+          BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
+          bos.write(arquivoRecebidoBytes);
+          bos.close();
+          
         }
           
       }
@@ -124,9 +144,10 @@ public class Chat {
           channel.queueUnbind(comando[1], comando[2], "");
         else if (mensagem.contains("!upload"))
         {
-          
           channelFile.queueDeclare(usuario + "_upload", false, false, false, null);
           String arquivoUpload = comando[1];
+          
+           System.out.println("Arquivo \"" + arquivoUpload +"\" foi enviado para @" + usuarioReceptor + "!");
           
           ThreadFile arquivo = new ThreadFile(arquivoUpload, usuario, usuarioReceptor, grupoNome, channelFile);
           arquivo.start();

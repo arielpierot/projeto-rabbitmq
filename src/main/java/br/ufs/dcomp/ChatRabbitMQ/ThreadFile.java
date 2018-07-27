@@ -4,6 +4,7 @@ import com.rabbitmq.client.*;
 import java.io.IOException;
 import java.util.*;
 import java.text.*;
+import java.io.*;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.ByteString;
 
@@ -32,11 +33,13 @@ public class ThreadFile extends Thread {
             msgBuilder.setHora(new SimpleDateFormat("HH:mm").format(new Date()));
         
             MensagemProto.Conteudo.Builder conteudoBuilder = MensagemProto.Conteudo.newBuilder();
-            conteudoBuilder.setTipo("pdf");
             
-            conteudoBuilder.setCorpo(ByteString.copyFrom(arquivoUpload.getBytes("UTF-8")));
+            File file_upload = new File(arquivoUpload);
+            byte[] arquivoUploadBytes = getBytes(file_upload);
+            conteudoBuilder.setCorpo(ByteString.copyFrom(arquivoUploadBytes));
             
             conteudoBuilder.setNome("Novo arquivo");
+            conteudoBuilder.setTipo("pdf");
             
             msgBuilder.setConteudo(conteudoBuilder);
           
@@ -55,6 +58,23 @@ public class ThreadFile extends Thread {
         } catch (Exception e){
             
         }
+    }
+    
+    public byte[] getBytes(File file) {
+        
+        int len = (int)file.length();  
+        byte[] sendBuf = new byte[len];
+        FileInputStream inFile  = null;
+        try {
+            inFile = new FileInputStream(file);         
+            inFile.read(sendBuf, 0, len);  
+        } catch (FileNotFoundException fnfex) {
+        
+        } catch (IOException ioex) {
+            
+        }
+        
+        return sendBuf;
     }
     
   
