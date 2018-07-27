@@ -55,7 +55,7 @@ public class Chat {
         
         System.out.println("");
         
-        if(tipo.equals("text/plain"))
+        if(tipo.equals("message"))
         {
           if(grupo.length() == 0)
           {
@@ -75,7 +75,7 @@ public class Chat {
           
           final String diretorio = "/home/ubuntu/workspace/sd/Chat/uploads/" + usuario;
           
-          String arquivo = nome + "." + tipo;
+          String arquivo = nome;
           
           System.out.println("("+ data + " às " + hora +")" + " Arquivo \"" + arquivo + "\" recebido de @" + emissor+ " !");
           File diretorioFile = new File(diretorio);
@@ -84,11 +84,15 @@ public class Chat {
             diretorioFile.mkdir();
           }
           
-          
           File file = new File(diretorio + "/"+ arquivo);
           BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
           bos.write(arquivoRecebidoBytes);
           bos.close();
+          
+          if(grupo.length() == 0)
+            System.out.print("@" + usuario + " >> ");
+          else
+            System.out.print("#" + grupo + " >> ");
           
         }
           
@@ -147,7 +151,7 @@ public class Chat {
           channelFile.queueDeclare(usuario + "_upload", false, false, false, null);
           String arquivoUpload = comando[1];
           
-           System.out.println("Arquivo \"" + arquivoUpload +"\" foi enviado para @" + usuarioReceptor + "!");
+           System.out.println("Arquivo \"" + arquivoUpload +"\" foi enviado para @" + usuarioReceptor + "! ");
           
           ThreadFile arquivo = new ThreadFile(arquivoUpload, usuario, usuarioReceptor, grupoNome, channelFile);
           arquivo.start();
@@ -179,6 +183,7 @@ public class Chat {
     }
     
     channel.close();
+    channelFile.close();
     connection.close();
     
   }
@@ -191,7 +196,7 @@ public class Chat {
     msgBuilder.setHora(new SimpleDateFormat("HH:mm").format(new Date()));
 
     MensagemProto.Conteudo.Builder conteudoBuilder = MensagemProto.Conteudo.newBuilder();
-    conteudoBuilder.setTipo("text/plain");
+    conteudoBuilder.setTipo("message");
     
     conteudoBuilder.setCorpo(ByteString.copyFrom(mensagem.getBytes("UTF-8")));
     
@@ -216,8 +221,8 @@ public class Chat {
     
 
     MensagemProto.Conteudo.Builder conteudoBuilder = MensagemProto.Conteudo.newBuilder();
-    conteudoBuilder.setTipo("text/plain");
-    conteudoBuilder.setNome("Nova msg");
+    conteudoBuilder.setTipo("message");
+    conteudoBuilder.setNome("Nova Mensagem");
     conteudoBuilder.setCorpo(ByteString.copyFrom(mensagem.getBytes("UTF-8")));
     
     msgBuilder.setConteudo(conteudoBuilder);

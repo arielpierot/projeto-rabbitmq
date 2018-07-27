@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.*;
 import java.text.*;
 import java.io.*;
+import java.nio.file.*;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.ByteString;
 
@@ -38,8 +39,11 @@ public class ThreadFile extends Thread {
             byte[] arquivoUploadBytes = getBytes(file_upload);
             conteudoBuilder.setCorpo(ByteString.copyFrom(arquivoUploadBytes));
             
-            conteudoBuilder.setNome("Novo arquivo");
-            conteudoBuilder.setTipo("pdf");
+            // MIME e Nome do arquivo
+            Path source = Paths.get(arquivoUpload);
+            String tipoMime = Files.probeContentType(source);
+            conteudoBuilder.setNome(file_upload.getName());
+            conteudoBuilder.setTipo(tipoMime);
             
             msgBuilder.setConteudo(conteudoBuilder);
           
@@ -52,7 +56,7 @@ public class ThreadFile extends Thread {
             else
                 channel.basicPublish(grupoNome, "", null, arquivoBytes);
                 
-            channel.close();
+            //channel.close();
         
         
         } catch (Exception e){
