@@ -7,6 +7,9 @@ import java.text.*;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.ByteString;
 import java.io.*;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONArray;
 
 public class Chat {
   
@@ -161,12 +164,39 @@ public class Chat {
         }
         else if (mensagem.contains("!listGroups"))
         {
-          restClient.check("/api/exchanges");
+          String jsonStr = restClient.check("/api/exchanges");
+          JSONArray arr = new JSONArray(jsonStr);
+          
+          String grupos = "";
+          
+          for (int i = 0; i < arr.length(); i++) {
+            String USER_WHO_PERFORMED_ACTION = arr.getJSONObject(i).getString("user_who_performed_action");
+            if(USER_WHO_PERFORMED_ACTION.equals("admin"))
+            {
+              grupos += arr.getJSONObject(i).getString("name") + ", ";
+            }
+            
+          }
+          
+          System.out.println(grupos.substring(0, grupos.length() - 2)); // Pular linha no final
+          
         }
         else if (mensagem.contains("!listUsers"))
         {
           String nomeGrupo = comando[1];
-          restClient.check("/api/exchanges/" + nomeGrupo + "/bindings/source");
+          
+          String jsonStr =  restClient.check("/api/exchanges/%2F/" + nomeGrupo + "/bindings/source");
+          
+          JSONArray arr = new JSONArray(jsonStr);
+          
+          String usuarios = "";
+          
+          for (int i = 0; i < arr.length(); i++)
+            usuarios += arr.getJSONObject(i).getString("destination") + ", ";
+          
+          
+          System.out.println(usuarios.substring(0, usuarios.length() - 2)); // Pular linha no final
+          
         }
           
         if(usuarioReceptor.length() > 0)

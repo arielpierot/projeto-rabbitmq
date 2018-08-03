@@ -7,7 +7,7 @@ import javax.ws.rs.core.Response;
  
 public class RESTClient
 {
-    public void check(String pathRest)
+    public String check(String pathRest)
     {
         try {
             
@@ -32,10 +32,12 @@ public class RESTClient
            
             if (resposta.getStatus() == 200) {
             	String json = resposta.readEntity(String.class);
-                System.out.println(json);
+                return json;
             }    
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
+		 return null;
     }
 }
