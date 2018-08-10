@@ -14,6 +14,9 @@ import org.json.JSONArray;
 public class Chat {
   
   static String usuario;
+  static String usuarioReceptor;
+  static String grupoReceptor;
+  static boolean msgGrupo = false;
 
   public static void main(String[] argv) throws Exception {
     
@@ -32,11 +35,8 @@ public class Chat {
     System.out.print("User: ");
     usuario = scanner.nextLine();
     
-    Boolean msgGrupo = false;
-    
     channel.queueDeclare(usuario, false, false, false, null);
     
-    String usuarioReceptor = "";
     String grupoNome = "";
     String mensagem = "";
     
@@ -62,15 +62,58 @@ public class Chat {
         
         if(tipo.equals("message"))
         {
-          if(grupo.length() == 0)
+          
+          if(grupo.length() == 0 && usuario != null)
           {
-            System.out.println("("+ data + " às " + hora +") " + emissor + " diz: " + corpo);
-            System.out.print("@" + usuario + " >> ");
+            if(usuarioReceptor == null)
+            {
+              System.out.println("("+ data + " às " + hora +") " + emissor + " diz: " + corpo);
+              System.out.print(">> ");
+            }
+            else 
+            {
+              if(msgGrupo)
+              {
+                if(grupo.length() == 0)
+                {
+                  System.out.println("("+ data + " às " + hora +") " + emissor + " diz: " + corpo);
+                  System.out.print("#" + grupoReceptor + " >> ");
+                }
+                else
+                {
+                  System.out.println("("+ data + " às " + hora +") " + emissor + " diz: " + corpo);
+                  System.out.print("#" + grupo + " >> ");
+                }
+              }
+              else
+              {
+                System.out.println("("+ data + " às " + hora +") " + emissor + " diz: " + corpo);
+                System.out.print("@" + usuarioReceptor + " >> "); 
+              }
+            }
+          }
+          else if(usuario != null)
+          {
+            if(msgGrupo)
+            {
+              System.out.println("("+ data + " às " + hora +") " + emissor + "#" + grupo + " diz: " + corpo);
+              System.out.print("#" + grupo + " >> ");
+            }
+            else {
+              if(usuarioReceptor == null){
+                System.out.println("("+ data + " às " + hora +") " + emissor + "#" + grupo + " diz: " + corpo);
+                System.out.print(">> ");
+              }
+              else {
+                System.out.println("("+ data + " às " + hora +") " + emissor + "#" + grupo + " diz: " + corpo);
+                System.out.print("@" + usuarioReceptor + " >> ");
+              }
+            }
+            
           }
           else
           {
-            System.out.println("("+ data + " às " + hora +") " + emissor + "#" + grupo + " diz: " + corpo);
-            System.out.print("#" + grupo + " >> ");
+            System.out.print(">> ");
           }
         }
         else
@@ -94,10 +137,9 @@ public class Chat {
           bos.write(arquivoRecebidoBytes);
           bos.close();
           
-          if(grupo.length() == 0)
-            System.out.print("@" + usuario + " >> ");
-          else
-            System.out.print("#" + grupo + " >> ");
+          
+          // resposta de arquivo recebido
+          
           
         }
           
@@ -134,6 +176,7 @@ public class Chat {
         usuarioReceptor = "";
         comandoAtivo = true;
         grupoNome = mensagem.substring(1, tamanhoMensagem);
+        grupoReceptor = grupoNome;
         msgGrupo = true;
         
         System.out.print("#" + grupoNome + " >> ");
