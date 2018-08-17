@@ -60,10 +60,34 @@ public class Chat {
         
         System.out.println("");
         
-        if(tipo.equals("message"))
+        if(!tipo.equals("message"))
         {
           
-          if(grupo.length() == 0 && usuario != null)
+          byte[] arquivoRecebidoBytes = conteudoRecebido.getCorpo().toByteArray();
+          
+          final String diretorio = "/home/ubuntu/workspace/sd/Chat/uploads/" + usuario;
+          
+          String arquivo = nome;
+          
+          System.out.println("("+ data + " às " + hora +")" + " Arquivo \"" + arquivo + "\" recebido de @" + emissor+ " !");
+          File diretorioFile = new File(diretorio);
+          
+          if (!diretorioFile.exists() && !diretorioFile.isDirectory()) {
+            diretorioFile.mkdir();
+          }
+          
+          File file = new File(diretorio + "/"+ arquivo);
+          BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
+          bos.write(arquivoRecebidoBytes);
+          bos.close();
+          
+          
+          // resposta de arquivo recebido
+        }
+        
+        // ETC
+        
+        if(grupo.length() == 0 && usuario != null)
           {
             if(usuarioReceptor == null)
             {
@@ -96,8 +120,21 @@ public class Chat {
           {
             if(msgGrupo)
             {
-              System.out.println("("+ data + " às " + hora +") " + emissor + "#" + grupo + " diz: " + corpo);
-              System.out.print("#" + grupo + " >> ");
+              if(grupo.length() == 0)
+              {
+                System.out.println("("+ data + " às " + hora +") " + emissor + " diz: " + corpo);
+                System.out.print("#" + grupoReceptor + " >> ");
+              }
+              else if(grupoReceptor.length() > 0)
+              {
+                System.out.println("("+ data + " às " + hora +") " + emissor + "#" + grupo + " diz: " + corpo);
+                System.out.print("#" + grupoReceptor + " >> ");
+              }
+              else
+              {
+                System.out.println("("+ data + " às " + hora +") " + emissor + " diz: " + corpo);
+                System.out.print("#" + grupo + " >> ");
+              }
             }
             else {
               if(usuarioReceptor == null){
@@ -115,33 +152,6 @@ public class Chat {
           {
             System.out.print(">> ");
           }
-        }
-        else
-        {
-          
-          byte[] arquivoRecebidoBytes = conteudoRecebido.getCorpo().toByteArray();
-          
-          final String diretorio = "/home/ubuntu/workspace/sd/Chat/uploads/" + usuario;
-          
-          String arquivo = nome;
-          
-          System.out.println("("+ data + " às " + hora +")" + " Arquivo \"" + arquivo + "\" recebido de @" + emissor+ " !");
-          File diretorioFile = new File(diretorio);
-          
-          if (!diretorioFile.exists() && !diretorioFile.isDirectory()) {
-            diretorioFile.mkdir();
-          }
-          
-          File file = new File(diretorio + "/"+ arquivo);
-          BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
-          bos.write(arquivoRecebidoBytes);
-          bos.close();
-          
-          
-          // resposta de arquivo recebido
-          
-          
-        }
           
       }
     };
@@ -226,39 +236,52 @@ public class Chat {
         }
         else if (mensagem.contains("!listUsers"))
         {
-          String nomeGrupo = comando[1];
           
-          String jsonStr =  restClient.check("/api/exchanges/%2F/" + nomeGrupo + "/bindings/source");
+          if(comando.length > 1 && comando[1] != null)
+          {
+            String nomeGrupo = comando[1];
+            
+            String jsonStr =  restClient.check("/api/exchanges/%2F/" + nomeGrupo + "/bindings/source");
           
-          JSONArray arr = new JSONArray(jsonStr);
-          
-          String usuarios = "";
-          
-          for (int i = 0; i < arr.length(); i++)
-            usuarios += arr.getJSONObject(i).getString("destination") + ", ";
-          
-          
-          System.out.println(usuarios.substring(0, usuarios.length() - 2)); // Pular linha no final
+            JSONArray arr = new JSONArray(jsonStr);
+            
+            String usuarios = "";
+            
+            for (int i = 0; i < arr.length(); i++)
+              usuarios += arr.getJSONObject(i).getString("destination") + ", ";
+            
+            if(usuarios.length() > 2)
+              System.out.println(usuarios.substring(0, usuarios.length() - 2)); // Pular linha no final
+            else
+              System.out.println("Sem usuários.");
+            
+          }
+          else
+          {
+            System.out.println("Digite corretamente: !listUsers [grupo]");
+          }
           
         }
           
-        if(usuarioReceptor.length() > 0)
+        if(usuarioReceptor != null && usuarioReceptor.length() > 0)
           System.out.print("@" + usuarioReceptor + " >> ");
-        else if(grupoNome.length() > 0)
+        else if(grupoNome != null && grupoNome.length() > 0)
           System.out.print("#" + grupoNome + " >> ");
+        else
+          System.out.print(">> ");
       }
       
-      if(msgGrupo && !comandoAtivo)
+      if(msgGrupo && !comandoAtivo && usuario.length() > 0)
       {
         System.out.print("#" + grupoNome + " >> ");
         enviar_mensagem_grupo(mensagem, usuario, grupoNome, channel);
       }
-      else if(!comandoAtivo)
+      else if(!comandoAtivo && usuario.length() > 0)
       {
         System.out.print("@" + usuarioReceptor + " >> ");
         enviar_mensagem(mensagem, usuario, usuarioReceptor, channel);
       }
-      else if(usuarioReceptor.length() == 0)
+      else if(usuarioReceptor != null && usuarioReceptor.length() == 0)
         System.out.print(">> ");
         
        mensagem = scanner.nextLine();
