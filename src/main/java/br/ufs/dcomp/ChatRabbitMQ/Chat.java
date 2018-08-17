@@ -83,11 +83,67 @@ public class Chat {
           
           
           // resposta de arquivo recebido
-        }
+          if(grupo.length() == 0 && usuario != null)
+          {
+            if(usuarioReceptor == null)
+            {
+              System.out.print(">> ");
+            }
+            else 
+            {
+              if(msgGrupo)
+              {
+                if(grupo.length() == 0)
+                {
+                  System.out.print("#" + grupoReceptor + " >> ");
+                }
+                else
+                {
+                  System.out.print("#" + grupo + " >> ");
+                }
+              }
+              else
+              {
+                System.out.print("@" + usuarioReceptor + " >> "); 
+              }
+            }
+          }
+          else if(usuario != null)
+          {
+            if(msgGrupo)
+            {
+              if(grupo.length() == 0)
+              {
+                System.out.print("#" + grupoReceptor + " >> ");
+              }
+              else if(grupoReceptor.length() > 0)
+              {
+                System.out.print("#" + grupoReceptor + " >> ");
+              }
+              else
+              {
+                System.out.print("#" + grupo + " >> ");
+              }
+            }
+            else {
+              if(usuarioReceptor == null){
+                System.out.print(">> ");
+              }
+              else {
+                System.out.print("@" + usuarioReceptor + " >> ");
+              }
+            }
+            
+          }
+          else
+          {
+            System.out.print(">> ");
+          }
+          
+        // fim
         
-        // ETC
-        
-        if(grupo.length() == 0 && usuario != null)
+        } else {
+          if(grupo.length() == 0 && usuario != null)
           {
             if(usuarioReceptor == null)
             {
@@ -152,7 +208,8 @@ public class Chat {
           {
             System.out.print(">> ");
           }
-          
+        }
+        
       }
     };
     
