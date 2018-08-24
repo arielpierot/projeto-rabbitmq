@@ -52,9 +52,9 @@ public class ThreadFile extends Thread {
             byte[] arquivoBytes = arquivoBuilded.toByteArray();
             
             if(grupoNome.length() == 0)
-                channel.basicPublish("", usuarioReceptor, null, arquivoBytes);
+                channel.basicPublish("", usuarioReceptor + "_upload", null, arquivoBytes);
             else
-                channel.basicPublish(grupoNome, "", null, arquivoBytes);
+                channel.basicPublish(grupoNome, "F", null, arquivoBytes);
                 
             //channel.close();
         

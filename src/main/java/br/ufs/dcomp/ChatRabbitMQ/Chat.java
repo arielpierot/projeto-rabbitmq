@@ -35,7 +35,10 @@ public class Chat {
     System.out.print("User: ");
     usuario = scanner.nextLine();
     
+    String usuarioUpload = usuario + "_upload";
+    
     channel.queueDeclare(usuario, false, false, false, null);
+    channelFile.queueDeclare(usuarioUpload, false, false, false, null);
     
     String grupoNome = "";
     String mensagem = "";
@@ -43,6 +46,7 @@ public class Chat {
     RESTClient restClient = new RESTClient();
     
     
+    // Consumidor fila usuário
     Consumer consumer = new DefaultConsumer(channel) {
       public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
           throws IOException {
@@ -214,6 +218,7 @@ public class Chat {
     };
     
     channel.basicConsume(usuario, true, consumer);
+    channelFile.basicConsume(usuarioUpload, true, consumer);
     
     System.out.print(">> ");
     mensagem = scanner.nextLine();
@@ -232,6 +237,7 @@ public class Chat {
       if(mensagem.substring(0, 1).equals("@"))
       {
         grupoNome = "";
+        grupoReceptor = "";
         comandoAtivo = true;
         usuarioReceptor = mensagem.substring(1,tamanhoMensagem);
         msgGrupo = false;
@@ -254,21 +260,29 @@ public class Chat {
         String[] comando = mensagem.split(" ");
   
         if(mensagem.contains("!addGroup"))
-           channel.exchangeDeclare(comando[1], "fanout");
+           channel.exchangeDeclare(comando[1], "direct");
         else if (mensagem.contains("!addUser"))
-          channel.queueBind(comando[1], comando[2], "");
+        {
+          channelFile.queueBind(comando[1] + "_upload", comando[2], "F");
+          channel.queueBind(comando[1], comando[2], "T");
+        }
         else if (mensagem.contains("!removeGroup"))
           channel.exchangeDelete(comando[1], false);
         else if (mensagem.contains("!delFromGroup"))
-          channel.queueUnbind(comando[1], comando[2], "");
+        {
+         channelFile.queueUnbind(comando[1] + "_upload", comando[2], "F"); 
+         channel.queueUnbind(comando[1], comando[2], "T"); 
+        }
         else if (mensagem.contains("!upload"))
         {
-          channelFile.queueDeclare(usuario + "_upload", false, false, false, null);
           String arquivoUpload = comando[1];
           
-           System.out.println("Arquivo \"" + arquivoUpload +"\" foi enviado para @" + usuarioReceptor + "! ");
-          
-          ThreadFile arquivo = new ThreadFile(arquivoUpload, usuario, usuarioReceptor, grupoNome, channelFile);
+          if(grupoReceptor.equals(""))
+            System.out.println("Arquivo \"" + arquivoUpload +"\" foi enviado para @" + usuarioReceptor + "! ");
+          else
+            System.out.println("Arquivo \"" + arquivoUpload +"\" foi enviado para #" + grupoReceptor + "! ");
+            
+          ThreadFile arquivo = new ThreadFile(arquivoUpload, usuario, usuarioReceptor, grupoReceptor, channelFile);
           arquivo.start();
           
         }
@@ -305,7 +319,10 @@ public class Chat {
             String usuarios = "";
             
             for (int i = 0; i < arr.length(); i++)
-              usuarios += arr.getJSONObject(i).getString("destination") + ", ";
+            {
+              if(arr.getJSONObject(i).getString("routing_key").equals("T"))
+                usuarios += arr.getJSONObject(i).getString("destination") + ", ";
+            }
             
             if(usuarios.length() > 2)
               System.out.println(usuarios.substring(0, usuarios.length() - 2)); // Pular linha no final
@@ -393,6 +410,6 @@ public class Chat {
     
     byte[] mensagemBytes = mensagemBuilded.toByteArray();
     
-    channel.basicPublish(grupoNome, "", null, mensagemBytes);
+    channel.basicPublish(grupoNome, "T", null, mensagemBytes);
   }
 }
